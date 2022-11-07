@@ -2,27 +2,31 @@
 
 #include <Arduino.h>
 #include <SPI.h>
-#include <PID_v2.h>         //PID library
+#include <PID_v2.h>  //PID library
 
-#define DATAOUT 51//COPI
-#define DATAIN  50//CIPO
-#define SPICLOCK  52//sck
-#define CHIPSELECT3 8//cs 
-#define CHIPSELECT2 7
-#define CHIPSELECT1 6
-#define CHIPSELECT4 2
+#define DATAOUT 51  //COPI
+#define DATAIN  50  //CIPO
+#define SPICLOCK  52 //sck
 
+// CS Pins for SPI. Pull pin low, SPI.transfer() and then pull pin high to send messages
+#define CHIPSELECT3 8 // DAC 3
+#define CHIPSELECT2 7 // DAC 2
+#define CHIPSELECT1 6 // DAC 1
+#define CHIPSELECT4 2 // Front Panel
+
+// PID feedback pins. Temporary 
 #define pidInPIN1 A5 //input to PID
 #define pidInPIN2 A7
 #define pidInPIN3 A6
 #define pidOutPIN 23  //output to PID
 
+// Desired voltage and current
 unsigned int vset = 0;
 unsigned int iset = 0;
 unsigned int voltageReading = 0;
 unsigned int currentReading = 0;
 
-//PID crap
+// PID
 double setPoint1;
 double PIDinput1, PIDoutput1, writetoPWM1;
 int writetoAnalog1;
@@ -52,6 +56,7 @@ unsigned int pidWrite = 0;
 byte state = 0;
 
 //SPISettings spisettings(20000x000, MSBFIRST, SPI_MODE1);
+
 SPISettings spisettings(500000, MSBFIRST, SPI_MODE1);
 
 
@@ -143,10 +148,10 @@ void setup() {
 
 void loop() {
   
-//PID DDDDDDDD
-  if(state >> 5 == 1)
+  //PID
+  if(state >> 5 == 1) // state >> 5 is the bit that represents if the power supply is in enabled mode (output enable on or off)
   {
-    setPoint1 = (vset * (5.0 / 1800.0));
+    setPoint1 = (vset * (5.0 / 1800.0)); // Calculate setpoint, converts 
     setPoint2 = setPoint1;
     setPoint3 = setPoint1;
   }
@@ -185,29 +190,20 @@ void loop() {
   digitalWrite(5, HIGH);
   digitalWrite(2, HIGH);
   //Serial.println(analogRead(A13));
-  //
-  //
-  //
+
+  
   digitalWrite(CHIPSELECT1, LOW);
-  //digitalWrite(CHIPSELECT4, LOW);
   delay(5);
-  //Serial.println(SPI.transfer16(((0b1001 << 12) + ((int((1 + ((sin(millis()/ 3000.00)))) * ((2048)))))))); 
   Serial.println(SPI.transfer16(((0b1001 << 12) + ((int((((writetoAnalog1))))))))); 
   delay(10);
-  //Serial.println(SPI.transfer16(((0b1010 << 12) + ((int((1 + ((sin(millis()/ 3500.00)))) * 2048))))));
-  //Serial.println(SPI.transfer16(((0b1001 << 12) + ((int(((analogRead(A13)*4))))))));
-  //Serial.println(SPI.transfer16(((0b1001 << 12) + (int(0)))));
+
   digitalWrite(CHIPSELECT1, HIGH);
 
   digitalWrite(CHIPSELECT2, LOW);
-  //digitalWrite(CHIPSELECT4, LOW);
   delay(5);
-  //Serial.println(SPI.transfer16(((0b1001 << 12) + ((int((1 + ((sin(millis()/ 3000.00)))) * ((2048)))))))); 
   Serial.println(SPI.transfer16(((0b1001 << 12) + ((int((((writetoAnalog2))))))))); 
   delay(10);
-  //Serial.println(SPI.transfer16(((0b1010 << 12) + ((int((1 + ((sin(millis()/ 3500.00)))) * 2048))))));
-  //Serial.println(SPI.transfer16(((0b1001 << 12) + ((int(((analogRead(A13)*4))))))));
-  //Serial.println(SPI.transfer16(((0b1001 << 12) + (int(0)))));
+
   digitalWrite(CHIPSELECT2, HIGH);
 
   digitalWrite(CHIPSELECT3, LOW);
@@ -215,7 +211,6 @@ void loop() {
   Serial.println(SPI.transfer16(((0b1001 << 12) + ((int((((writetoAnalog3))))))))); 
   delay(10);
   digitalWrite(CHIPSELECT3, HIGH);
-  //digitalWrite(CHIPSELECT4, HIGH);
   
   Serial.println();
   Serial.println(setPoint1);
@@ -234,58 +229,8 @@ void loop() {
   
 
 
-  //THIS IS WHERE I COMMENTED OUT THE CODE 10/27/22
   
- //
- //+
- //
-  /*
-  delay(1500);
-
-
-  digitalWrite(CHIPSELECT, LOW);
-  //Serial.println(SPI.transfer16(((0b1001 << 12) + ((int((1 + ((sin(millis()/ 500.00)))) * 2048))))));
-  Serial.println(SPI.transfer16(((0b1001 << 12) + (int((.5/2.5)*4096)))));
-  delay(5);
-  digitalWrite(CHIPSELECT, HIGH);
-  delay(1);
-  delay(1500);
-
-  digitalWrite(CHIPSELECT, LOW);
-  //Serial.println(SPI.transfer16(((0b1001 << 12) + ((int((1 + ((sin(millis()/ 500.00)))) * 2048))))));
-  Serial.println(SPI.transfer16(((0b1001 << 12) + (int((1.0/2.5)*4096)))));
-  delay(5);
-  digitalWrite(CHIPSELECT, HIGH);
-  delay(1);
-  delay(1500);
-
-
-  digitalWrite(CHIPSELECT, LOW);
-  //Serial.println(SPI.transfer16(((0b1001 << 12) + ((int((1 + ((sin(millis()/ 500.00)))) * 2048))))));
-  Serial.println(SPI.transfer16(((0b1001 << 12) + (int((1.5/2.5)*4096)))));
-  delay(5);
-  digitalWrite(CHIPSELECT, HIGH);
-  delay(1500);
-
-  digitalWrite(CHIPSELECT, LOW);
-  //Serial.println(SPI.transfer16(((0b1001 << 12) + ((int((1 + ((sin(millis()/ 500.00)))) * 2048))))));
-  Serial.println(SPI.transfer16(((0b1001 << 12) + (int((2.0/2.5)*4096)))));
-  delay(5);
-  digitalWrite(CHIPSELECT, HIGH);
-  delay(1500);
-
-  digitalWrite(CHIPSELECT, LOW);
-  //Serial.println(SPI.transfer16(((0b1001 << 12) + ((int((1 + ((sin(millis()/ 500.00)))) * 2048))))));
-  Serial.println(SPI.transfer16(((0b1001 << 12) + (int(4095)))));
-  delay(5);
-  digitalWrite(CHIPSELECT, HIGH);
-  delay(1500);
-  */
-  //Serial.println((0b1001 << 12) + ((int((1 + ((sin(millis()/ 10000.00)))) * 2048))));
-  //Serial.println(int((1 + ((sin(millis()/ 10000.00)))) * 2048));
-
-  
-  voltageReading = (analogRead(6) + analogRead(7) + analogRead(5)) * (1800 / 3072.0);
+  voltageReading = (analogRead(6) + analogRead(7) + analogRead(5)) * (1800 / 3072.0); // Calculate voltage reading
   currentReading = 0;
   
   delay(5);
