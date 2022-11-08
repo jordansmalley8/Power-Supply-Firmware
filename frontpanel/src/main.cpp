@@ -1,3 +1,7 @@
+// Front panel
+// This runs on the front panel. Reads from 4 buttons and 2 encoders and controls both 7-segment displays and LED lights
+// This also talks to the other microcontroller through SPI and sends a 7 byte packet back and forth 
+
 #include <Arduino.h>
 #include <Wire.h> 
 #include <SPI.h>                        
@@ -18,7 +22,7 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_BRWG + NEO_KHZ800);
 ISR (SPI_STC_vect) // SPI interrupt routine. This triggers every time a SPI byte is received. 
 { 
   // Each SPI message is made up of 7 bytes. The message comes in 1 byte at a time, so this gets triggered 7 times for 1 message
-
+  
   byte c = SPDR; // read byte from SPI Data Register. 
 
   SPDR = sendbuffer[indx]; // This is the register for the return message. indx keeps track of what part of the message you're in
