@@ -1,6 +1,9 @@
+// This runs on the microcontroller on the HE board
+// Reads vset and iset commands from the front panel microcontroller through SPI, controls 3x PFCs and 3x HEs
+
 #include <Arduino.h>
 #include <SPI.h>
-#include <PID_v2.h>         //PID library
+#include <PID_v2.h>   //PID library
 
 #define DATAOUT 51    //COPI
 #define DATAIN  50    //CIPO
@@ -12,7 +15,7 @@
 #define CHIPSELECT1 6 // DAC 1
 #define CHIPSELECT4 2 // Front Panel
 
-#define pidInPIN1 A5  // PID emulator reading pins (temporary)
+#define pidInPIN1 A5  // PID emulator input pins (temporary)
 #define pidInPIN2 A7
 #define pidInPIN3 A6
 #define pidOutPIN 23  
