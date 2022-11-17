@@ -28,12 +28,14 @@ byte receivedBuffer[5] = {0,0,0,0,0};
 byte slaveReceived = 0; 
 boolean received = false;
 
+boolean displayUpdate = 1;
+unsigned long lastDisplayUpdateTime = 0;
 
 void setup() {
   // put your setup code here, to run once:
 
   Serial.begin(19200);
-  Serial3.begin(19200);
+  Serial3.begin(38400);
 
   strip.begin();
   strip2.begin();
@@ -158,21 +160,28 @@ void loop() {
 
   sprintf(tempString, "%4d", current);
   // Update both 7-segment displays to show voltage/ current either measured voltage current or desired voltage/ current depending on mode
+  
   if(enable==0)
   {
-    sprintf(tempString, "%4d", iset);
-    s7sSendStringI2C(tempString);
-    sprintf(tempString, "%4d", vset);
-    s7sSendStringI2C_2(tempString);
+    if (1) // (millis() - lastDisplayUpdateTime) > 200
+    {
+      lastDisplayUpdateTime = millis();
+      sprintf(tempString, "%4d", iset);
+      s7sSendStringI2C(tempString);
+      sprintf(tempString, "%4d", vset);
+      s7sSendStringI2C_2(tempString);
+    }
   }
   else
   {
-    
-    sprintf(tempString, "%4d", (current));
-    s7sSendStringI2C(tempString);
-    sprintf(tempString, "%4d", (voltage));
-    s7sSendStringI2C_2(tempString);
-    
+    if (1) // (millis() - lastDisplayUpdateTime) > 30
+    { 
+      lastDisplayUpdateTime = millis();
+      sprintf(tempString, "%4d", (current));
+      s7sSendStringI2C(tempString);
+      sprintf(tempString, "%4d", (voltage));
+      s7sSendStringI2C_2(tempString);
+    }
   }
 
 

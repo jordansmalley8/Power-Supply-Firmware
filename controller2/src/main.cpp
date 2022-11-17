@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+#include <Smoothed.h>
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -30,6 +30,10 @@
 #define VD2 A2
 #define VD3 A3
 
+Smoothed <int> voltage1filter;
+Smoothed <int> voltage2filter;
+Smoothed <int> voltage3filter;
+
 int iset = 0; // iset desired current
 int vset = 0; // vset desired voltage
 
@@ -39,8 +43,8 @@ int voltage3 = 0; // Measured voltage from HE 3
 
 double setPoint;
 
-double kp = 0; 
-double ki = .4;
+double kp = .1; 
+double ki = 1.4;
 double kd = 0;
 
 double PIDin1, PIDout1;
@@ -54,9 +58,10 @@ PID PID3(&PIDin3, &PIDout3, &setPoint, kp, ki, kd, DIRECT);
 
 SPISettings spisettings(500000, MSBFIRST, SPI_MODE1);
 
-int SPIDelay = 4;
+int SPIDelay = 1;
 int SPIDelay2 = 1;
 int SPIDelay3 = 10;
+int SPIDelayM = 500;
 boolean enabled = 0;
 
 int state;
@@ -93,7 +98,7 @@ void writeDAC1(int write)
   digitalWrite(CHIPSELECT1, LOW);
   //digitalWrite(CHIPSELECT4, LOW);
   (SPI.transfer16(((0b1001 << 12) + ((int((((write))))))))); 
-  delay(SPIDelay);
+  delayMicroseconds(SPIDelayM);
   digitalWrite(CHIPSELECT1, HIGH);
 }
                           // 4095 => 0V , 0 => 60V
@@ -102,7 +107,7 @@ void writeDAC2(int write) // 0 to 4095
   digitalWrite(CHIPSELECT2, LOW);
   //digitalWrite(CHIPSELECT4, LOW);
   (SPI.transfer16(((0b1001 << 12) + ((int((((write))))))))); 
-  delay(SPIDelay);
+  delayMicroseconds(SPIDelayM);
   digitalWrite(CHIPSELECT2, HIGH);
 }
 
@@ -110,7 +115,7 @@ void writeDAC3(int write)
 {
   digitalWrite(CHIPSELECT3, LOW);
   (SPI.transfer16(((0b1001 << 12) + ((int((((write))))))))); 
-  delay(SPIDelay);
+  delayMicroseconds(SPIDelayM);
   digitalWrite(CHIPSELECT3, HIGH);
 }
 
@@ -127,6 +132,14 @@ void setup() {
   pinMode(A8, INPUT);
   pinMode(A6, INPUT);
   pinMode(A7, INPUT);
+  
+  voltage1filter.begin(SMOOTHED_EXPONENTIAL, 8);
+  voltage2filter.begin(SMOOTHED_EXPONENTIAL, 8);
+  voltage3filter.begin(SMOOTHED_EXPONENTIAL, 8);
+
+  voltage1filter.clear();
+  voltage2filter.clear();
+  voltage3filter.clear();
   //pinMode(5, OUTPUT);
 
   //PID stuff
@@ -137,6 +150,12 @@ void setup() {
   PID2.SetMode(AUTOMATIC);         //sets mode of PID
   PIDin3 = 0;     //reads the input from output of LPF
   PID3.SetMode(AUTOMATIC);         //sets mode of PID
+  
+  PID1.SetSampleTime(70);
+  PID2.SetSampleTime(70);
+  PID3.SetSampleTime(70);
+
+
   // put your setup code here, to run once:
   
   SPI.setBitOrder(MSBFIRST);
@@ -146,15 +165,35 @@ void setup() {
   initializeDACs();
 
   Serial.begin(9600);
-  Serial3.begin(19200);
+  Serial3.begin(38400);
 }
 
 void loop() {
+  //Serial.println(analogRead(VD1));
+
+voltage1filter.add(analogRead(VD1));
+voltage2filter.add(analogRead(VD2));
+voltage3filter.add(analogRead(VD3));
+
+  //Serial.println(voltage1filter.get());
+  /*
   voltage1 = analogRead(VD1);
   voltage2 = (analogRead(VD2) * 2) - (voltage1);
   voltage3 = (analogRead(VD3) * 3) - voltage1 - voltage2;  
+  */
+ /*
+voltage1 = analogRead(VD1);
+voltage2 = analogRead(VD2);
+voltage3 = analogRead(VD3);
+*/ 
+voltage1 = analogRead(VD1);
+voltage2 = (analogRead(VD2) * 2) - (voltage1);
+voltage3 = (analogRead(VD3) * 3) - voltage1 - voltage2;  
+voltage1 = voltage1filter.get();
+voltage2 = voltage2filter.get();
+voltage3 = voltage3filter.get();
 
-  if(enabled)
+  if(enable==1)
   {
     setPoint = double(vset*(255/1800.0));
   }
@@ -175,11 +214,16 @@ void loop() {
   PID3.Compute();
   
  
-  writeDAC1(4095 - (PIDout1 * (4095 / 257)));
-  writeDAC2(4095 - (PIDout2 * (4095 / 257)));
-  writeDAC3(4095 - (PIDout3 * (4095 / 257)));
+  writeDAC1(4095 - int(PIDout1 * (4095 / 257)));
+  writeDAC2(4095 - int(PIDout2 * (4095 / 257)));
+  writeDAC3(4095 - int(PIDout3 * (4095 / 257)));
 
-
+/*
+  writeDAC1(4095 - int(2048));
+  writeDAC2(4095 - int(2048));
+  writeDAC3(4095 - int(2048));
+*/
+  /*
   Serial.println();
   Serial.println(analogRead(A1));
   Serial.println(analogRead(A2));
@@ -190,11 +234,12 @@ void loop() {
   Serial.println(PIDin1);
   Serial.println(PIDout1);
   Serial.println();
+  */
 
   int current = analogRead(A4);
 
-  int voltage = voltage1 + voltage2 + voltage3;
-  //int current = 221;
+  double voltage = double(double(voltage1 + voltage2 + voltage3) * (1800.0 / 3072.0));
+  //int current = 221;  
 
 
   Serial3.print(voltage);
@@ -213,11 +258,13 @@ void loop() {
     state = (Serial3.readStringUntil('\t')).toInt();
     enable = (Serial3.readStringUntil('\n')).toInt();
   }
+  /*
   Serial.println("VSET:");
   Serial.println(vset);
   Serial.println(iset);
   Serial.println(state);
   Serial.println(enable);
+  */
   
   
   
