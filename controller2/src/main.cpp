@@ -5,10 +5,10 @@
 #include <SPI.h>
 #include <PID_v2.h>         //PID library
 
-#define DATAOUT 51//COPI
-#define DATAIN  50//CIPO
-#define SPICLOCK  52//sck
-#define CHIPSELECT3 8//cs 
+#define DATAOUT 51  //COPI
+#define DATAIN  50  //CIPO
+#define SPICLOCK  52  //sck
+#define CHIPSELECT3 8 //cs 
 #define CHIPSELECT2 7
 #define CHIPSELECT1 6
 #define CHIPSELECT4 2
@@ -169,29 +169,19 @@ void setup() {
 }
 
 void loop() {
-  //Serial.println(analogRead(VD1));
 
-voltage1filter.add(analogRead(VD1));
-voltage2filter.add(analogRead(VD2));
-voltage3filter.add(analogRead(VD3));
+  voltage1filter.add(analogRead(VD1));
+  voltage2filter.add(analogRead(VD2));
+  voltage3filter.add(analogRead(VD3));
 
-  //Serial.println(voltage1filter.get());
   /*
   voltage1 = analogRead(VD1);
   voltage2 = (analogRead(VD2) * 2) - (voltage1);
   voltage3 = (analogRead(VD3) * 3) - voltage1 - voltage2;  
   */
- /*
-voltage1 = analogRead(VD1);
-voltage2 = analogRead(VD2);
-voltage3 = analogRead(VD3);
-*/ 
-voltage1 = analogRead(VD1);
-voltage2 = (analogRead(VD2) * 2) - (voltage1);
-voltage3 = (analogRead(VD3) * 3) - voltage1 - voltage2;  
-voltage1 = voltage1filter.get();
-voltage2 = voltage2filter.get();
-voltage3 = voltage3filter.get();
+  voltage1 = voltage1filter.get();
+  voltage2 = voltage2filter.get();
+  voltage3 = voltage3filter.get();
 
   if(enable==1)
   {
@@ -201,14 +191,13 @@ voltage3 = voltage3filter.get();
     setPoint = 0;
   }
 
-  //setPoint = 127;
 
   PIDin1 = double(voltage1) / 4.0;
   PIDin2 = double(voltage2) / 4.0;
   PIDin3 = double(voltage3) / 4.0;
 
   
-  // Calculate PID loops
+  // Update PID loops
   PID1.Compute();
   PID2.Compute();
   PID3.Compute();
@@ -218,29 +207,9 @@ voltage3 = voltage3filter.get();
   writeDAC2(4095 - int(PIDout2 * (4095 / 257)));
   writeDAC3(4095 - int(PIDout3 * (4095 / 257)));
 
-/*
-  writeDAC1(4095 - int(2048));
-  writeDAC2(4095 - int(2048));
-  writeDAC3(4095 - int(2048));
-*/
-  /*
-  Serial.println();
-  Serial.println(analogRead(A1));
-  Serial.println(analogRead(A2));
-
-
-  Serial.println(analogRead(A3));
-  Serial.println();
-  Serial.println(PIDin1);
-  Serial.println(PIDout1);
-  Serial.println();
-  */
-
   int current = analogRead(A4);
 
   double voltage = double(double(voltage1 + voltage2 + voltage3) * (1800.0 / 3072.0));
-  //int current = 221;  
-
 
   Serial3.print(voltage);
   Serial3.print("\t");
@@ -268,6 +237,4 @@ voltage3 = voltage3filter.get();
   
   
   
-
-  // put your main code here, to run repeatedly:
 }
