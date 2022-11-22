@@ -112,7 +112,7 @@ void loop() {
   while(Serial3.available()) 
   {
     voltage = (Serial3.readStringUntil('\t')).toInt(); // vset is the desired or commanded voltage. 'voltage' is the measured voltage. 
-    current = (Serial3.readStringUntil('\t')).toInt(); // iset 
+    current = (Serial3.readStringUntil('\t')).toInt(); // iset is the desired or commanded current. 'current' is the measured current.
     state   = (Serial3.readStringUntil('\t')).toInt();
     int enable1 = (Serial3.readStringUntil('\n')).toInt();
   }
