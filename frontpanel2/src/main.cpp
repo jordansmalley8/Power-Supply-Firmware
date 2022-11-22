@@ -9,38 +9,26 @@
 #define LED_PIN 36
 #define LED_PIN2 38
 #define LED_COUNT 20
-#define button1pin 2
+#define button1pin 2 
 #define button2pin 3 
 #define button3pin 18
 #define enablebuttonpin 19
 
-Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_BRWG + NEO_KHZ800);
-Adafruit_NeoPixel strip2(LED_COUNT, 38, NEO_BRWG + NEO_KHZ800);
-
-
-int index = 0;
-boolean delimiter;
-
-
-byte sendBuffer[5] = {0,0,0,0,0}; 
-byte receivedBuffer[5] = {0,0,0,0,0};
-
-byte slaveReceived = 0; 
-boolean received = false;
+Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_BRWG + NEO_KHZ800); // left LED strip
+Adafruit_NeoPixel strip2(LED_COUNT, 38, NEO_BRWG + NEO_KHZ800); // right LED strip
 
 boolean displayUpdate = 1;
 unsigned long lastDisplayUpdateTime = 0;
 
-void setup() {
-  // put your setup code here, to run once:
+void setup() { // Setup. This method runs once when the arduino gets turned on. This is the 'Start-up sequence'
+ 
+  Serial.begin(19200); // Serial port on the front panel arduino
+  Serial3.begin(38400); // Serial between the two arduinos (front panel talking to controller)
 
-  Serial.begin(19200);
-  Serial3.begin(38400);
-
-  strip.begin();
+  strip.begin(); // Turning on both led strips
   strip2.begin();
 
-  pinMode(18, INPUT_PULLUP);
+  pinMode(18, INPUT_PULLUP); 
 
   Serial.println("1");
   Wire.begin();  // Initialize hardware I2C pins
@@ -53,7 +41,7 @@ void setup() {
   setDecimalsI2C_2(0b111111);  // Turn on all decimals, colon, apos
 
 
-  attachInterrupt(digitalPinToInterrupt(button1pin), button1, RISING);
+  attachInterrupt(digitalPinToInterrupt(button1pin), button1, RISING); // Attaching interrupts for buttons, the 3 buttons and enable button
   attachInterrupt(digitalPinToInterrupt(button2pin), button2, RISING);
   attachInterrupt(digitalPinToInterrupt(button3pin), button3, RISING);
   attachInterrupt(digitalPinToInterrupt(enablebuttonpin), enableButton, RISING);
@@ -65,11 +53,12 @@ void setup() {
   setBrightnessI2C(255);  // High brightness
   setBrightnessI2C_2(255);  // High brightness
   delay(500);
+
   // Clear the display before jumping into loop
   clearDisplayI2C();  
   clearDisplayI2C_2();
 
-  if (twist.begin(Wire, 0x3E) == false)
+  if (twist.begin(Wire, 0x3E) == false) // Two encoders
   {
     Serial.println("Twist does not appear to be connected. Please check wiring. Freezing...");
     while (1);
@@ -79,19 +68,11 @@ void setup() {
     Serial.println("Twist2 does not appear to be connected. Please check wiring. Freezing...");
     while (1);
   }
-  /*
-  pinMode(MISO, OUTPUT);
-  // put your setup code here, to run once:
-  SPI.setBitOrder(MSBFIRST);
-  SPI.setDataMode(SPI_MODE0);
-  SPCR |= _BV(SPE);
-  SPI.attachInterrupt();
-  SPI.begin();
-  */
 }
 
 void loop() {
-    // Set led strip color
+
+  // For loop to set the color of each led in each LED strip
   for(int i = 0; i < LED_COUNT; i++) 
   {
       strip.setPixelColor(i, 0, 49, 0, 0);
@@ -104,15 +85,19 @@ void loop() {
       
   }
 
-  strip.show();
+  strip.show(); // Show method for both led strips 
   strip2.show();
+  
 
- 
+  // This whole block of code with Serial3 is the communication between the two microcontrollers 
+  
+  
   int state = 3; 
-  boolean enable = enableButtonState; 
+  boolean enable = enableButtonState;
   int voltage;
   int current;
 
+  // Sending the vset and iset values to the other microcontroller
   Serial3.print(vset);
   Serial3.print("\t");
   Serial3.print(iset);
@@ -122,18 +107,21 @@ void loop() {
   Serial3.print(enable);
   Serial3.print("\n");
   delay(5);
-  while(Serial3.available())
+
+  // Receiving data from the other microcontroller. 
+  while(Serial3.available()) 
   {
-    voltage = (Serial3.readStringUntil('\t')).toInt();
-    current = (Serial3.readStringUntil('\t')).toInt();
+    voltage = (Serial3.readStringUntil('\t')).toInt(); // vset is the desired or commanded voltage. 'voltage' is the measured voltage. 
+    current = (Serial3.readStringUntil('\t')).toInt(); // iset 
     state   = (Serial3.readStringUntil('\t')).toInt();
     int enable1 = (Serial3.readStringUntil('\n')).toInt();
   }
   
+  // Print the read values 
   Serial.println(voltage);
   Serial.println(current);
   Serial.println(state);
-  Serial.println(enable);
+  Serial.println(enable1);
 
   if (buttonMode == 1) // Voltage Mode
   {
