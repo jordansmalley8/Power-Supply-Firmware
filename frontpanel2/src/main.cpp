@@ -146,6 +146,37 @@ void loop() {
   iset += twist.getDiff();
   vset += twist2.getDiff();
 
+  //Setting up Remote mode
+  if(buttonMode == 3)
+  {
+    Serial2.begin(9600);
+   
+    while(Serial2.available() == 0)
+    {
+    }
+   
+    // Get data from serial monitor
+    Serial2.print("Enter in the current value: ");
+    int iset = Serial2.parseInt();
+    Serial2.println("");
+    Serial2.print("Enter in the voltage value: ");
+    int vset = Serial2.parseInt();
+    Serial2.println("");
+    Serial2.print("Enter in the 0 for current mode and 1 for voltage mode: ");
+    int mode = Serial2.parseInt();
+    Serial2.println("");
+   
+    // Sending the vset, iset, and mode values to the other microcontroller
+    Serial2.print(vset);
+    Serial2.print("\t");
+    Serial2.print(iset);
+    Serial2.print("\t");
+    Serial2.print(mode);
+    Serial2.print("\n");
+    delay(5);   
+    
+  }
+ 
   sprintf(tempString, "%4d", current);
   // Update both 7-segment displays to show voltage/ current either measured voltage current or desired voltage/ current depending on mode
   
